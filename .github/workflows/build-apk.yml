@@ -1,4 +1,4 @@
-2name: Build TC Analyzer APK
+name: Build TC Analyzer APK
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ jobs:
         run: |
           mkdir buildsrc
           unzip -q TC_Analyzer_Real_APK_Build_Project_v25.zip -d buildsrc
-          echo "Extracted project:"
-          find buildsrc -maxdepth 2 -type f | head -50
+          echo "Finding Gradle project..."
+          find buildsrc -name settings.gradle -o -name settings.gradle.kts
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -35,12 +35,19 @@ jobs:
         with:
           gradle-version: '8.10'
 
-      - name: Build APK
-        working-directory: buildsrc
-        run: gradle assembleDebug
+      - name: Find and build APK
+        run: |
+          PROJECT_DIR=$(dirname "$(find "$GITHUB_WORKSPACE/buildsrc" -name settings.gradle -print -quit)")
+          echo "Project directory: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          gradle assembleDebug
+
+      - name: Find APK
+        run: |
+          find buildsrc -name "*.apk" -type f
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: TC-Analyzer-v25-APK
-          path: buildsrc/app/build/outputs/apk/debug/app-debug.apk
+          path: buildsrc/**/app/build/outputs/apk/debug/app-debug.apk
