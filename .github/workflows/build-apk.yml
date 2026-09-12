@@ -16,12 +16,16 @@ jobs:
 
       - name: Extract TC Analyzer project
         run: |
-          mkdir buildsrc
+          mkdir -p buildsrc
           unzip -q TC_Analyzer_Real_APK_Build_Project_v25.zip -d buildsrc
-          echo "Finding Gradle project..."
-          find buildsrc -name settings.gradle -o -name settings.gradle.kts
 
-      - name: Set up Java
+          echo "=== Gradle project files ==="
+          find buildsrc -name "settings.gradle" -o -name "settings.gradle.kts"
+
+          echo "=== Build files ==="
+          find buildsrc -name "build.gradle" -o -name "build.gradle.kts"
+
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -30,24 +34,36 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.10'
 
-      - name: Find and build APK
+      - name: Find Gradle project
         run: |
           PROJECT_DIR=$(dirname "$(find "$GITHUB_WORKSPACE/buildsrc" -name settings.gradle -print -quit)")
-          echo "Project directory: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
-          gradle assembleDebug
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Gradle project found at: $PROJECT_DIR"
+          ls -la "$PROJECT_DIR"
 
-      - name: Find APK
+      - name: Build TC Analyzer APK
         run: |
-          find buildsrc -name "*.apk" -type f
+          cd "$PROJECT_DIR"
+          gradle assembleDebug --stacktrace --info
 
-      - name: Upload APK
+      - name: Find generated APK
+        run: |
+          echo "=== Searching for APK ==="
+          find "$GITHUB_WORKSPACE/buildsrc" -type f -name "*.apk" -print
+
+      - name: Upload TC Analyzer APK
         uses: actions/upload-artifact@v4
         with:
           name: TC-Analyzer-v25-APK
-          path: buildsrc/**/app/build/outputs/apk/debug/app-debug.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
