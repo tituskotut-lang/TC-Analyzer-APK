@@ -67,3 +67,10 @@ jobs:
           name: TC-Analyzer-v25-APK
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == "org.jetbrains.kotlin") {
+            details.useVersion "1.8.22"
+        }
+    }
+}
