@@ -1,0 +1,46 @@
+name: Build TC Analyzer APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v4
+
+      - name: Extract TC Analyzer project
+        run: |
+          mkdir buildsrc
+          unzip -q TC_Analyzer_Real_APK_Build_Project_v25.zip -d buildsrc
+          echo "Extracted project:"
+          find buildsrc -maxdepth 2 -type f | head -50
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10'
+
+      - name: Build APK
+        working-directory: buildsrc
+        run: gradle assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: TC-Analyzer-v25-APK
+          path: buildsrc/app/build/outputs/apk/debug/app-debug.apk
