@@ -1,4 +1,4 @@
-name: Build TC Analyzer APK
+2name: Build TC Analyzer APK
 
 on:
   workflow_dispatch:
